@@ -1,0 +1,93 @@
+#include <DHT11.h>
+
+// Pin definitions
+#define SOIL_MOISTURE_PIN A0
+#define PH_SENSOR_PIN A1
+#define DHT_PIN 2
+#define RELAY_PIN 7
+#define FLOAT_SWITCH_PIN 3
+
+// LED pin definitions
+#define GREEN_LED_PIN 4
+#define YELLOW_LED_PIN 5
+#define RED_LED_PIN 6
+
+
+// Global variables
+DHT11 dht(DHT_PIN); // Create an instance of the DHT11 class with the pin number
+
+void setup() {
+    Serial.begin(9600);
+    pinMode(RELAY_PIN, OUTPUT);
+    pinMode(FLOAT_SWITCH_PIN, INPUT);
+    
+    // Set LED pins as outputs
+    pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(YELLOW_LED_PIN, OUTPUT);
+    pinMode(RED_LED_PIN, OUTPUT);
+}
+
+void loop() {
+    // Read soil moisture
+    int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN); // Use analogRead for soil moisture
+    Serial.print("Soil Moisture: ");
+    Serial.println(soilMoistureValue);
+
+    // Read pH raw analog value
+    int pH = analogRead(PH_SENSOR_PIN);
+
+    // Convert raw value to 0–14 range
+    float pH_value = (pH * 14.0) / 1023.0;
+
+    Serial.print("pH Value: ");
+    Serial.println(pH_value);
+
+
+    // Control LEDs based on pH value
+    if (pH_value < 6.0) {
+        // Low pH (acidic)
+        Serial.println("pH is low (acidic)");
+        digitalWrite(RED_LED_PIN, HIGH);
+        digitalWrite(YELLOW_LED_PIN, LOW);
+        digitalWrite(GREEN_LED_PIN, LOW);
+    } else if (pH_value >= 6.0 && pH_value <= 8.0) {
+        // Medium pH (neutral)
+        Serial.println("pH is medium (neutral)");
+        digitalWrite(RED_LED_PIN, LOW);
+        digitalWrite(YELLOW_LED_PIN, HIGH);
+        digitalWrite(GREEN_LED_PIN, LOW);
+    } else {
+        // High pH (alkaline)
+        Serial.println("pH is high (alkaline)");
+        digitalWrite(RED_LED_PIN, LOW);
+        digitalWrite(YELLOW_LED_PIN, LOW);
+        digitalWrite(GREEN_LED_PIN, HIGH);
+    }
+
+    // Read temperature and humidity
+    int humidity = dht.readHumidity();
+    int temperature = dht.readTemperature();
+    Serial.print("Humidity: ");
+    Serial.print(humidity);
+    Serial.print("% Temperature: ");
+    Serial.print(temperature);
+    Serial.println("°C");
+
+    // Control water pump based on soil moisture
+    if (soilMoistureValue < 500) {
+        digitalWrite(RELAY_PIN, LOW); // Turn off pump
+        Serial.println("Pump OFF");
+    } else {
+        digitalWrite(RELAY_PIN, HIGH); // Turn on pump
+        Serial.println("Pump ON");
+    }
+
+    // Check float switch status
+    if (digitalRead(FLOAT_SWITCH_PIN) == LOW) {
+        Serial.println("Water level low!");
+    } else {
+        Serial.println("Water level high!");
+    }
+
+    delay(500); // Wait for next reading
+}
